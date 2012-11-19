@@ -1,0 +1,24 @@
+<style type="text/css">
+    .error {
+        color: red;
+    }
+    .label {
+        text-align: right
+    }
+    textarea {
+        width: 500px;
+        height: 400px;
+        font-size: 17px;
+        font-family: monospace;
+    }
+</style>
+<form method="post">
+    <label>
+        <div>title</div> <input type="text" name="subject">
+    </label>
+    <label>
+        <div>content</div> <textarea class="textarea" name="content"></textarea>
+    </label>
+    <div class="error">{{error}}</div>
+    <input type="submit">
+</form>
