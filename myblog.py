@@ -8,6 +8,8 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape=True)
 
 class BlogDb(db.Model):
+    #user = db.StringProperty(required = True)
+    #password = db.StringProperty(required = True)
     title = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
