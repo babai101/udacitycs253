@@ -72,6 +72,17 @@ class Handler(webapp2.RequestHandler):
         return t.render(params)
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
+    def render_front(self, title="", content=""):
+        blogs = db.GqlQuery("SELECT * FROM BlogDb ORDER BY created DESC")
+        self.render("front-page.html", title=title, content=content, blogs = blogs)
+
+
+class BlogDb(db.Model):
+    #user = db.StringProperty(required = True)
+    #password = db.StringProperty(required = True)
+    title = db.StringProperty(required = True)
+    content = db.TextProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
 
 class UserDb(db.Model):
     user = db.StringProperty(required = True)
@@ -97,7 +108,8 @@ def valid_verify(verify, password):
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
-        self.response.out.write(mainpage)
+        self.render.front()
+
 class ROT13(webapp2.RequestHandler):
     def get(self):
         self.response.out.write(form)
@@ -212,7 +224,32 @@ class Logout(Handler):
         self.response.headers.add_header('Set-Cookie', 'user_id=%s; Path=/' % '')
         self.redirect('/signup')
 
+class PermaLink(Handler):
+    def get(self):
+        url = self.request.url
+        keyid = int(re.findall(r'/unit3/[0-9]+', url)[0][7:])
+        blogs = db.GqlQuery("SELECT * FROM BlogDb ORDER BY created DESC") 
+        for blog in blogs:
+            if blog.key().id() == keyid:
+                self.render("view-post.html", blog = blog)
+
+class NewPost(Handler):
+    def get(self):
+        self.render("newpost.html")
+
+    def post(self):
+        title = self.request.get("subject") 
+        content = self.request.get("content")
+        if title and content:
+            #a = BlogDb()
+            a = BlogDb(title = title, content = content)
+            a.put()
+            keyid = a.key().id()
+            redirecturl = '/unit3/' + str(keyid)
+            self.redirect(redirecturl)   
+        else:
+            error = "please enter both title and content!" 
+            self.render("newpost.html", error = error)
     
 
-app = webapp2.WSGIApplication([('/', MainPage), ('/unit2/rot13', ROT13), ('/signup', SignUp), ('/welcome', WelCome), ('/login', Login), ('/logout', Logout)],
-                              debug=True)
+app = webapp2.WSGIApplication([('/', MainPage), ('/unit2/rot13', ROT13), ('/signup', SignUp), ('/welcome', WelCome), ('/login', Login), ('/logout', Logout), ('/newpost'), NewPost), ('/[0-9]+', PermaLink)], debug=True)
