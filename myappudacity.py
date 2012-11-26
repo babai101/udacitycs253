@@ -7,6 +7,7 @@ import os
 import hmac
 import hashlib
 import random
+import json
 from google.appengine.ext import db
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -14,11 +15,6 @@ jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), a
 
 
 SECRET = 'archlinux'
-
-
-mainpage="""
-<h2>This is the home page</h2>
-"""
 
 form="""
 
@@ -64,6 +60,10 @@ def valid_pw(name, pw, h):
     salt = h.split(',')[1]
     return h == make_pw_hash(name, pw, salt)
 
+#def makeJson(Handler, kwargs):
+#    self.response.out.write(kwargs.title)
+
+
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
@@ -106,9 +106,9 @@ def valid_verify(verify, password):
         return True
     else: return False
 
-class MainPage(webapp2.RequestHandler):
+class MainPage(Handler):
     def get(self):
-        self.render.front()
+        self.render_front()
 
 class ROT13(webapp2.RequestHandler):
     def get(self):
@@ -227,11 +227,29 @@ class Logout(Handler):
 class PermaLink(Handler):
     def get(self):
         url = self.request.url
-        keyid = int(re.findall(r'/unit3/[0-9]+', url)[0][7:])
+        keyid = int(re.findall(r'/[0-9]+', url)[0][1:])
         blogs = db.GqlQuery("SELECT * FROM BlogDb ORDER BY created DESC") 
         for blog in blogs:
             if blog.key().id() == keyid:
                 self.render("view-post.html", blog = blog)
+class PermaLinkJson(Handler):
+    def get(self):
+        url = self.request.url
+        keyid = int(re.findall(r'/[0-9]+', url)[0][1:])
+        blogs = db.GqlQuery("SELECT * FROM BlogDb ORDER BY created DESC") 
+        for blog in blogs:
+            if blog.key().id() == keyid:
+                self.response.headers['Content-Type'] = 'application/json; charset=UTF-8'
+                self.response.out.write(json.dumps({"subject":str(blog.title), "content": str(blog.content)}))
+
+class MainPageJson(Handler):
+    def get(self):
+        temp = []
+        blogs = db.GqlQuery("SELECT * FROM BlogDb ORDER BY created DESC")
+        for blog in blogs:
+            temp.append({"subject": str(blog.title), "content": str(blog.content)})
+        self.response.headers['Content-Type'] = 'application/json; charset=UTF-8'
+        self.response.out.write(json.dumps(temp))
 
 class NewPost(Handler):
     def get(self):
@@ -245,11 +263,11 @@ class NewPost(Handler):
             a = BlogDb(title = title, content = content)
             a.put()
             keyid = a.key().id()
-            redirecturl = '/unit3/' + str(keyid)
+            redirecturl = '/' + str(keyid)
             self.redirect(redirecturl)   
         else:
             error = "please enter both title and content!" 
             self.render("newpost.html", error = error)
     
 
-app = webapp2.WSGIApplication([('/', MainPage), ('/unit2/rot13', ROT13), ('/signup', SignUp), ('/welcome', WelCome), ('/login', Login), ('/logout', Logout), ('/newpost'), NewPost), ('/[0-9]+', PermaLink)], debug=True)
+app = webapp2.WSGIApplication([('/', MainPage), ('/unit2/rot13', ROT13), ('/signup', SignUp), ('/welcome', WelCome), ('/login', Login), ('/logout', Logout), ('/newpost', NewPost), ('/[0-9]+', PermaLink), ('/[0-9]+\.json', PermaLinkJson), ('/\.json', MainPageJson)], debug=True)

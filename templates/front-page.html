@@ -54,7 +54,7 @@
     <a href="/unit3" class="main-title">My Blog</a>
     {% for blog in blogs %}
     <div class="post">
-        <div class="post-heading"><a href="/unit3/{{blog.key().id()}}" class="post-title">{{blog.title}}</a></div>
+        <div class="post-heading"><a href="/{{blog.key().id()}}" class="post-title">{{blog.title}}</a></div>
         <pre-wrap class="post-content">{{blog.content}}</pre-wrap>
     </div>
     {% endfor %}
